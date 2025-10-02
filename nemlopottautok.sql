@@ -1,90 +1,42 @@
--- ========================
--- Ügyfelek tábla
--- ========================
-CREATE TABLE ugyfelek (
-    id INT AUTO_INCREMENT PRIMARY KEY,                      -- Egyedi azonosító (automatikusan növekvő szám)
-    nev VARCHAR(100) NOT NULL,                              -- Ügyfél teljes neve (max. 100 karakter)
-    email VARCHAR(100) UNIQUE NOT NULL,                     -- E-mail cím (egyedi, max. 100 karakter)
-    telefon VARCHAR(20),                                    -- Telefonszám (max. 20 karakter)
-    jogositvany_szam VARCHAR(50) UNIQUE NOT NULL,           -- Jogosítvány száma (egyedi, max. 50 karakter)
-    regisztracio_datum TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Regisztráció dátuma (automatikus időbélyeg)
-);
+-- Ügyfelek hozzáadása
+INSERT INTO ugyfelek (nev, email, telefon, jogositvany_szam)
+VALUES
+('Kovács Ádám', 'adam.kovacs@example.com', '+36123456789', 'AB123456'),   -- Első ügyfél adatai
+('Nagy Eszter', 'eszter.nagy@example.com', '+36201234567', 'CD789012'),    -- Második ügyfél
+('Tóth Gábor', 'gabor.toth@example.com', '+36301234567', 'EF345678');      -- Harmadik ügyfél
 
--- ========================
--- Telephelyek tábla
--- ========================
-CREATE TABLE telephelyek (
-    id INT AUTO_INCREMENT PRIMARY KEY,          -- Egyedi azonosító
-    nev VARCHAR(100) NOT NULL,                  -- Telephely neve (pl. "Budapest - Központ")
-    cim VARCHAR(200) NOT NULL                   -- Telephely címe
-);
+-- Telephelyek hozzáadása
+INSERT INTO telephelyek (nev, cim)
+VALUES
+('Budapest Központ', '1051 Budapest, Kossuth Lajos utca 10.'),             -- Budapest telephely
+('Debrecen Főút', '4024 Debrecen, Piac utca 7.');                          -- Debreceni telephely
 
--- ========================
--- Járművek tábla
--- ========================
-CREATE TABLE jarmuvek (
-    id INT AUTO_INCREMENT PRIMARY KEY,                                      -- Egyedi azonosító
-    marka VARCHAR(50) NOT NULL,                                             -- Autó márkája (pl. Toyota)
-    modell VARCHAR(50) NOT NULL,                                            -- Autó modellje (pl. Corolla)
-    evjarat INT NOT NULL,                                                  -- Gyártási év (pl. 2021)
-    rendszam VARCHAR(20) UNIQUE NOT NULL,                                  -- Rendszám (egyedi, max. 20 karakter)
-    alvazszam VARCHAR(50) UNIQUE NOT NULL,                                 -- Alvázszám (VIN, egyedi)
-    allapot ENUM('elerheto', 'berbeadva', 'szerviz') NOT NULL,            -- Jármű állapota
-    napi_berleti_dij DECIMAL(10, 2) NOT NULL,                              -- Napi bérleti díj (pl. 15990.00)
-    telephely_id INT NOT NULL,                                             -- Hivatkozás, melyik telephelyhez tartozik
-    FOREIGN KEY (telephely_id) REFERENCES telephelyek(id)                 -- Külső kulcs a telephelyek táblára
-);
+-- Járművek hozzáadása
+INSERT INTO jarmuvek (marka, modell, evjarat, rendszam, alvazszam, allapot, napi_berleti_dij, telephely_id)
+VALUES
+('Toyota', 'Corolla', 2021, 'ABC-123', 'JT1234567890123456', 'elerheto', 15000.00, 1),  -- Toyota a budapesti telephelyen, elérhető állapotban
+('Ford', 'Focus', 2020, 'DEF-456', 'FT6543210987654321', 'berbeadva', 14000.00, 1),    -- Ford, bérelt állapotban, szintén Budapesten
+('Volkswagen', 'Golf', 2019, 'GHI-789', 'VW9876543210123456', 'elerheto', 16000.00, 2);-- VW Debreceni telephelyen, elérhető
 
--- ========================
--- Foglalások tábla
--- ========================
-CREATE TABLE foglalasok (
-    id INT AUTO_INCREMENT PRIMARY KEY,                                       -- Egyedi azonosító
-    ugyfel_id INT NOT NULL,                                                  -- Hivatkozás az ügyfélre
-    jarmu_id INT NOT NULL,                                                   -- Hivatkozás a járműre
-    kezdet_datum DATE NOT NULL,                                              -- Foglalás kezdete
-    veg_datum DATE NOT NULL,                                                 -- Foglalás vége
-    statusz ENUM('fuggoben', 'megerositve', 'lemondva') NOT NULL,           -- Foglalás állapota
-    FOREIGN KEY (ugyfel_id) REFERENCES ugyfelek(id),                         -- Kapcsolat az ügyfelek táblával
-    FOREIGN KEY (jarmu_id) REFERENCES jarmuvek(id)                           -- Kapcsolat a járművek táblával
-);
+-- Foglalások létrehozása
+INSERT INTO foglalasok (ugyfel_id, jarmu_id, kezdet_datum, veg_datum, statusz)
+VALUES
+(1, 1, '2025-10-05', '2025-10-10', 'megerositve'),    -- Kovács Ádám foglalása a Toyota-ra, megerősített státusz
+(2, 3, '2025-11-01', '2025-11-05', 'fuggoben'),       -- Nagy Eszter foglalása a VW-re, függő státuszban
+(3, 2, '2025-10-15', '2025-10-20', 'lemondva');       -- Tóth Gábor foglalása, de lemondva
 
--- ========================
--- Kölcsönzések tábla
--- ========================
-CREATE TABLE kolcsonzesek (
-    id INT AUTO_INCREMENT PRIMARY KEY,                                         -- Egyedi azonosító
-    foglalas_id INT NOT NULL,                                                 -- Kapcsolat egy foglaláshoz
-    atvetel_idopont TIMESTAMP,                                                -- Jármű átvételének időpontja
-    visszahozatal_idopont TIMESTAMP,                                          -- Jármű visszahozatalának időpontja
-    vegosszeg DECIMAL(10,2),                                                  -- Végösszeg (Ft)
-    statusz ENUM('aktiv', 'befejezve', 'keses') NOT NULL DEFAULT 'aktiv',     -- Kölcsönzés státusza
-    FOREIGN KEY (foglalas_id) REFERENCES foglalasok(id)                       -- Külső kulcs a foglalások táblához
-);
+-- Kölcsönzések adatai
+INSERT INTO kolcsonzesek (foglalas_id, atvetel_idopont, visszahozatal_idopont, vegosszeg, statusz)
+VALUES
+(1, '2025-10-05 09:00:00', '2025-10-10 18:00:00', 75000.00, 'befejezve'),  -- Első foglalásból kölcsönzés, már visszahozva és fizetve
+(2, NULL, NULL, NULL, 'aktiv');                                             -- Második foglalás aktív kölcsönzés, még folyamatban
 
--- ========================
--- Fizetések tábla
--- ========================
-CREATE TABLE fizetesek (
-    id INT AUTO_INCREMENT PRIMARY KEY,                                       -- Egyedi azonosító
-    kolcsonzes_id INT NOT NULL,                                              -- Hivatkozás egy kölcsönzésre
-    fizetes_idopont TIMESTAMP DEFAULT CURRENT_TIMESTAMP,                     -- Fizetés időpontja
-    osszeg DECIMAL(10,2) NOT NULL,                                           -- Kifizetett összeg
-    fizetesmod ENUM('kartya', 'keszpenz', 'online') NOT NULL,                -- Fizetés módja
-    statusz ENUM('fizetve', 'folyamatban', 'sikertelen') NOT NULL,          -- Fizetés állapota
-    FOREIGN KEY (kolcsonzes_id) REFERENCES kolcsonzesek(id)                 -- Külső kulcs a kölcsönzések táblához
-);
+-- Fizetések rögzítése
+INSERT INTO fizetesek (kolcsonzes_id, fizetes_idopont, osszeg, mod, statusz)
+VALUES
+(1, '2025-10-05 09:30:00', 75000.00, 'kartya', 'fizetve');  -- Az első kölcsönzéshez tartozó fizetés, sikeres bankkártyás tranzakció
 
--- ========================
--- Károk tábla
--- ========================
-CREATE TABLE karok (
-    id INT AUTO_INCREMENT PRIMARY KEY,                                       -- Egyedi azonosító
-    jarmu_id INT NOT NULL,                                                   -- Érintett jármű
-    kolcsonzes_id INT NOT NULL,                                              -- Érintett kölcsönzés
-    leiras TEXT,                                                             -- Káresemény leírása
-    javitasi_koltseg DECIMAL(10,2),                                         -- Becsült javítási költség
-    jelentve TIMESTAMP DEFAULT CURRENT_TIMESTAMP,                           -- Jelentés időpontja
-    FOREIGN KEY (jarmu_id) REFERENCES jarmuvek(id),                         -- Kapcsolat járművek táblához
-    FOREIGN KEY (kolcsonzes_id) REFERENCES kolcsonzesek(id)                -- Kapcsolat kölcsönzések táblához
-);
+-- Káresemény rögzítése
+INSERT INTO karok (jarmu_id, kolcsonzes_id, leiras, javitasi_koltseg)
+VALUES
+(2, 1, 'Karcolás a bal első ajtón.', 25000.00);             -- A Fordon keletkezett karcolás az első kölcsönzés során, javítási költség becsléssel
